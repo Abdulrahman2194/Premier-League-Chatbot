@@ -16,15 +16,9 @@ headers = {
     "X-Auth-Token": football_api_key
 }
 
-response = requests.get("https://api.football-data.org/v4/competitions/PL/standings", headers=headers)
+response = requests.get("https://api.football-data.org/v4/competitions/PL/scorers", headers=headers)
 data=response.json()
 
 
-
-for team in data["standings"][0]["table"]:
-    team_name = team["team"]["name"]
-    team_position = team["position"]
-    team_played = team["playedGames"]
-    team_points=team["points"]
-
-    print(f"{team_position}. {team_name} - Played: {team_played}, Points: {team_points}")
+print(data["scorers"][0]["player"].keys())
+print(data["count"])

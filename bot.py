@@ -30,9 +30,14 @@ async def on_message(message):
 
     if message.content.startswith("!hello"):
         await message.channel.send("⚽ Premier League bot here.")
+
     if message.content.startswith("!table"):
         table=get_table()
         await message.channel.send(table)
+
+    if message.content.startswith("!topscorers"):
+        top_scorers=get_top_scorers()
+        await message.channel.send(top_scorers)
 
 
 
@@ -46,7 +51,7 @@ def get_table():
     data = response.json()
     lines = []
     for team in data["standings"][0]["table"]:
-        team_name = team["team"]["name"]
+        team_name = team["team"]["shortName"]
         team_position = team["position"]
         team_played = team["playedGames"]
         team_points = team["points"]
@@ -54,6 +59,19 @@ def get_table():
         lines.append(f"{team_position}. {team_name} - Played: {team_played}, Points: {team_points}")
     return "\n".join(lines)
 
+def get_top_scorers():
+    headers={
+        "X-Auth-Token": football_api_key
+    }
+    response=requests.get("https://api.football-data.org/v4/competitions/PL/scorers", headers=headers)
+    data=response.json()
+    lines=[]
+    for scorer in data["scorers"]:
+        player_name=scorer["player"]["name"]
+        team_name=scorer["team"]["name"]
+        goals=scorer["goals"]
 
+        lines.append(f"{player_name} ({team_name}) - Goals: {goals}")
+    return "\n".join(lines)
 
 client.run(discord_token)
