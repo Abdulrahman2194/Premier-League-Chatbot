@@ -39,6 +39,16 @@ async def on_message(message):
         top_scorers=get_top_scorers()
         await message.channel.send(top_scorers)
 
+    if message.content.startswith("!form"):
+        split=message.content.split("!form ")
+        if len(split) < 2:
+            await message.channel.send("Please provide a team name after !form command.")
+            return
+        team_name=split[1]
+        form=get_form(team_name)
+        await message.channel.send(form)
+        
+
 
 
 
@@ -73,5 +83,27 @@ def get_top_scorers():
 
         lines.append(f"{player_name} ({team_name}) - Goals: {goals}")
     return "\n".join(lines)
+
+def get_form(team_name):
+    headers={
+        "X-Auth-Token": football_api_key
+    }
+    response=requests.get("https://api.football-data.org/v4/competitions/PL/standings", headers=headers)
+    data=response.json()
+
+    for team in data["standings"][0]["table"]:
+        if team["team"]["shortName"].lower() == team_name.lower():
+            form = team["form"]
+            if form is None:
+                return f"{team_name} has no recent form data available."
+            
+            return f"{team_name} recent form: {form}"
+
+    return f"Team {team_name} not found in the Premier League standings recheck !table."
+
+
+
+
+
 
 client.run(discord_token)
