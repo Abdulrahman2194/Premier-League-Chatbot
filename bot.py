@@ -47,6 +47,15 @@ async def on_message(message):
         team_name=split[1]
         form=get_form(team_name)
         await message.channel.send(form)
+
+    if message.content.startswith("!next"):
+        split=message.content.split("!next ")
+        if len(split) < 2:
+            await message.channel.send("Please provide a team name after !next command.")
+            return
+        team_name=split[1]
+        next_match=get_next_match(team_name)
+        await message.channel.send(next_match)
         
 
 
@@ -101,9 +110,36 @@ def get_form(team_name):
 
     return f"Team {team_name} not found in the Premier League standings recheck !table."
 
+def get_next_match(team_name):
+    headers = {
+        "X-Auth-Token": football_api_key
+    }
+    
+    standings_response = requests.get("https://api.football-data.org/v4/competitions/PL/standings", headers=headers)
+    standings_data = standings_response.json()
+    
+    for team in standings_data["standings"][0]["table"]:
+        if team["team"]["shortName"].lower() == team_name.lower():
+            team_id = team["team"]["id"]
+            
+            matches_response = requests.get(f"https://api.football-data.org/v4/teams/{team_id}/matches?status=SCHEDULED", headers=headers)
+            matches_data = matches_response.json()
+            
+            if len(matches_data["matches"]) == 0:
+                return f"{team_name} has no upcoming matches."
+            
+            next_match = matches_data["matches"][0]
+            
+            
+            if next_match["homeTeam"]["id"] == team_id:
+                opponent = next_match["awayTeam"]["name"]
+            else:
+                opponent = next_match["homeTeam"]["name"]
+                
+            match_date = next_match["utcDate"]
+            
+            return f"{team_name} next match: vs {opponent} on {match_date}"
 
-
-
-
+    return f"Team '{team_name}' not found."
 
 client.run(discord_token)

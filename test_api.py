@@ -16,9 +16,13 @@ headers = {
     "X-Auth-Token": football_api_key
 }
 
-response = requests.get("https://api.football-data.org/v4/competitions/PL/scorers", headers=headers)
+response = requests.get("https://api.football-data.org/v4/teams/57/matches?status=SCHEDULED", headers=headers)
 data=response.json()
 
+print(len(data["matches"]))
+print(data["matches"][0].keys())
 
-print(data["scorers"][0]["player"].keys())
-print(data["count"])
+
+
+for match in data["matches"][:3]:
+    print(match["utcDate"])
