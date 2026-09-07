@@ -19,4 +19,16 @@ client=discord.Client(intents=intents)
 async def on_ready():
     print(f"{client.user} is online")
 
+
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    if message.content.startswith("!hello"):
+        await message.channel.send("⚽ Premier League bot here.")
+
+
+
 client.run(discord_token)
