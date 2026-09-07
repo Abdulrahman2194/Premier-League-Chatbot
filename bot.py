@@ -16,6 +16,22 @@ intents.message_content=True
 
 client=discord.Client(intents=intents)
 
+def fetch_api(url):
+    headers = {
+        "X-Auth-Token": football_api_key
+    }
+    
+    try:
+        response = requests.get(url, headers=headers)
+        
+        if response.status_code != 200:
+            return None
+            
+        return response.json()
+        
+    except requests.exceptions.RequestException:
+        return None
+ 
 
 @client.event
 async def on_ready():
@@ -63,11 +79,12 @@ async def on_message(message):
 
 
 def get_table():
-    headers = {
-        "X-Auth-Token": football_api_key
-    }
-    response = requests.get("https://api.football-data.org/v4/competitions/PL/standings", headers=headers)
-    data = response.json()
+    data = fetch_api("https://api.football-data.org/v4/competitions/PL/standings")
+    
+    
+    if data is None:
+        return "Couldn't reach the football API. Try again in a minute."
+    
     lines = []
     for team in data["standings"][0]["table"]:
         team_name = team["team"]["shortName"]
@@ -78,12 +95,13 @@ def get_table():
         lines.append(f"{team_position}. {team_name} - Played: {team_played}, Points: {team_points}")
     return "\n".join(lines)
 
+
 def get_top_scorers():
-    headers={
-        "X-Auth-Token": football_api_key
-    }
-    response=requests.get("https://api.football-data.org/v4/competitions/PL/scorers", headers=headers)
-    data=response.json()
+    data= fetch_api("https://api.football-data.org/v4/competitions/PL/scorers")
+
+    if data is None:
+        return "Couldn't reach the football API. Try again in a minute."
+    
     lines=[]
     for scorer in data["scorers"]:
         player_name=scorer["player"]["name"]
@@ -94,11 +112,9 @@ def get_top_scorers():
     return "\n".join(lines)
 
 def get_form(team_name):
-    headers={
-        "X-Auth-Token": football_api_key
-    }
-    response=requests.get("https://api.football-data.org/v4/competitions/PL/standings", headers=headers)
-    data=response.json()
+    data = fetch_api("https://api.football-data.org/v4/competitions/PL/standings")
+    if data is None:
+        return "Couldn't reach the football API. Try again in a minute."
 
     for team in data["standings"][0]["table"]:
         if team["team"]["shortName"].lower() == team_name.lower():
@@ -111,25 +127,25 @@ def get_form(team_name):
     return f"Team {team_name} not found in the Premier League standings recheck !table."
 
 def get_next_match(team_name):
-    headers = {
-        "X-Auth-Token": football_api_key
-    }
-    
-    standings_response = requests.get("https://api.football-data.org/v4/competitions/PL/standings", headers=headers)
-    standings_data = standings_response.json()
-    
+    standings_data = fetch_api("https://api.football-data.org/v4/competitions/PL/standings")
+    if standings_data is None:
+        return "Couldn't reach the football API. Try again in a minute."
+
     for team in standings_data["standings"][0]["table"]:
         if team["team"]["shortName"].lower() == team_name.lower():
             team_id = team["team"]["id"]
             
-            matches_response = requests.get(f"https://api.football-data.org/v4/teams/{team_id}/matches?status=SCHEDULED", headers=headers)
-            matches_data = matches_response.json()
+            
+            matches_data = fetch_api(f"https://api.football-data.org/v4/teams/{team_id}/matches?status=SCHEDULED")
+            
+            
+            if matches_data is None:
+                return "Couldn't reach the football API. Try again in a minute."
             
             if len(matches_data["matches"]) == 0:
                 return f"{team_name} has no upcoming matches."
             
             next_match = matches_data["matches"][0]
-            
             
             if next_match["homeTeam"]["id"] == team_id:
                 opponent = next_match["awayTeam"]["name"]
